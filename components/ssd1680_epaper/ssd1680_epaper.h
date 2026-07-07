@@ -7,7 +7,6 @@
 namespace esphome {
 namespace ssd1680_epaper {
 
-// VERSION 2 - with deferred init
 class SSD1680EPaper : public display::DisplayBuffer,
                       public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, spi::CLOCK_POLARITY_LOW,
                                            spi::CLOCK_PHASE_LEADING, spi::DATA_RATE_4MHZ> {
@@ -40,7 +39,7 @@ class SSD1680EPaper : public display::DisplayBuffer,
   GPIOPin *dc_pin_{nullptr};
   GPIOPin *reset_pin_{nullptr};
   GPIOPin *busy_pin_{nullptr};
-  
+
   bool initialized_{false};
 };
 
