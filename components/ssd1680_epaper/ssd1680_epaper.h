@@ -25,9 +25,6 @@ class SSD1680EPaper : public display::DisplayBuffer,
  protected:
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
 
-  // Geometria lógica exposta ao ESPHome
-  // O painel físico é 122x250, mas desenhamos em 250x122
-  // e rotacionamos internamente para casar com a varredura do SSD1680.
   int get_height_internal() override { return 122; }
   int get_width_internal() override { return 250; }
 
