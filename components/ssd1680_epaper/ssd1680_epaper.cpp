@@ -9,9 +9,9 @@ namespace ssd1680_epaper {
 static const char *const TAG = "ssd1680_epaper";
 
 // VERSION 2 - Deferred init for debugging
-// Display dimensions for 2.9" display
-static const uint16_t WIDTH = 128;
-static const uint16_t HEIGHT = 296;
+// Display dimensions for 2.13" display
+static const uint16_t WIDTH = 122;
+static const uint16_t HEIGHT = 250;
 static const uint32_t ALLSCREEN_BYTES = (WIDTH * HEIGHT) / 8;
 
 void SSD1680EPaper::setup() {
