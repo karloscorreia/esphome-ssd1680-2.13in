@@ -7,6 +7,7 @@
 namespace esphome {
 namespace ssd1680_epaper {
 
+// VERSION 2 - with deferred init
 class SSD1680EPaper : public display::DisplayBuffer,
                       public spi::SPIDevice<spi::BIT_ORDER_MSB_FIRST, spi::CLOCK_POLARITY_LOW,
                                            spi::CLOCK_PHASE_LEADING, spi::DATA_RATE_4MHZ> {
@@ -25,8 +26,9 @@ class SSD1680EPaper : public display::DisplayBuffer,
  protected:
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
 
-  int get_height_internal() override { return 122; }
-  int get_width_internal() override { return 250; }
+  // 2.13" CrowPanel – resolução lógica 122 x 250
+  int get_height_internal() override { return 250; }
+  int get_width_internal() override { return 122; }
 
   void init_display_();
   void hw_reset_();
@@ -40,7 +42,7 @@ class SSD1680EPaper : public display::DisplayBuffer,
   GPIOPin *dc_pin_{nullptr};
   GPIOPin *reset_pin_{nullptr};
   GPIOPin *busy_pin_{nullptr};
-
+  
   bool initialized_{false};
 };
 
