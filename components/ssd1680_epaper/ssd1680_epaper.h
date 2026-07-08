@@ -25,10 +25,8 @@ class SSD1680EPaper : public display::DisplayBuffer,
 
  protected:
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
-
-  // 2.13" CrowPanel – resolução lógica 122 x 250
-  int get_height_internal() override { return 250; }
-  int get_width_internal() override { return 122; }
+  int get_height_internal() override { return 296; }
+  int get_width_internal() override { return 128; }
 
   void init_display_();
   void hw_reset_();
