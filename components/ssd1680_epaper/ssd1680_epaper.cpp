@@ -9,10 +9,9 @@ namespace ssd1680_epaper {
 static const char *const TAG = "ssd1680_epaper";
 
 // VERSION 2 - Deferred init for debugging
-// Display dimensions for 2.13" CrowPanel display
-// RAM física: 128 x 250; área ativa: 122 x 250
-static const uint16_t WIDTH = 128;    // largura da RAM em pixels
-static const uint16_t HEIGHT = 250;   // altura (linhas) do painel
+// Display dimensions for 2.9" display
+static const uint16_t WIDTH = 128;
+static const uint16_t HEIGHT = 296;
 static const uint32_t ALLSCREEN_BYTES = (WIDTH * HEIGHT) / 8;
 
 void SSD1680EPaper::setup() {
@@ -188,31 +187,31 @@ void SSD1680EPaper::init_display_() {
     App.feed_wdt();
   }
   
-  // Driver output control (HEIGHT = 250 → 249 = 0x00F9)
+  // Driver output control
   ESP_LOGD(TAG, "Setting driver output (0x01)");
   this->command_(0x01);
-  this->data_(0xF9);  // HEIGHT - 1 low byte (249)
-  this->data_(0x00);  // high byte
-  this->data_(0x00);  // GD=0, SM=0, TB=0
+  this->data_(0x27);
+  this->data_(0x01);
+  this->data_(0x00);
   
   // Data entry mode
   ESP_LOGD(TAG, "Setting data entry mode (0x11)");
   this->command_(0x11);
-  this->data_(0x03);  // X inc, Y inc
+  this->data_(0x03);
   
-  // RAM X address (0..15 → 16 bytes = 128 px, 122 usados)
+  // RAM X address
   ESP_LOGD(TAG, "Setting RAM X (0x44)");
   this->command_(0x44);
   this->data_(0x00);
   this->data_(0x0F);
   
-  // RAM Y address  (0..249)
+  // RAM Y address  
   ESP_LOGD(TAG, "Setting RAM Y (0x45)");
   this->command_(0x45);
-  this->data_(0x00);  // Y start low
-  this->data_(0x00);  // Y start high
-  this->data_(0xF9);  // Y end low   (249)
-  this->data_(0x00);  // Y end high
+  this->data_(0x00);
+  this->data_(0x00);
+  this->data_(0x27);
+  this->data_(0x01);
   
   // Border waveform
   ESP_LOGD(TAG, "Setting border (0x3C)");
@@ -285,27 +284,27 @@ void SSD1680EPaper::display_frame_() {
   delay(10);
   this->wait_until_idle_();
   
-  // Driver output control (HEIGHT = 250 → 249 = 0x00F9)
+  // Driver output control
   this->command_(0x01);
-  this->data_(0xF9);  // low byte (249)
-  this->data_(0x00);  // high byte
+  this->data_(0x27);  // 296 - 1 = 0x127, low byte
+  this->data_(0x01);  // high byte
   this->data_(0x00);  // GD=0, SM=0, TB=0
   
   // Data entry mode
   this->command_(0x11);
   this->data_(0x03);  // X inc, Y inc
   
-  // Set RAM X address (0..15 -> 16 bytes = 128 pixels)
+  // Set RAM X address
   this->command_(0x44);
   this->data_(0x00);
   this->data_(0x0F);  // 16 bytes = 128 pixels
   
-  // Set RAM Y address  (0..249)
+  // Set RAM Y address  
   this->command_(0x45);
-  this->data_(0x00);  // Y start low
-  this->data_(0x00);  // Y start high
-  this->data_(0xF9);  // Y end low   (249)
-  this->data_(0x00);  // Y end high
+  this->data_(0x00);
+  this->data_(0x00);
+  this->data_(0x27);
+  this->data_(0x01);
   
   // Set RAM address counters
   this->command_(0x4E);
