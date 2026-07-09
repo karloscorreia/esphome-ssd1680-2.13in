@@ -9,10 +9,11 @@ namespace ssd1680_epaper {
 static const char *const TAG = "ssd1680_epaper";
 
 // VERSION 2 - Deferred init for debugging
-// Display dimensions for 2.9" display
+// Display dimensions for 2.13" CrowPanel (GDEM0213B74, SSD1680)
+// Confirmado pela referência oficial GxEPD2_213_B74: WIDTH=128, HEIGHT=250
 static const uint16_t WIDTH = 128;
-static const uint16_t HEIGHT = 296;
-static const uint32_t ALLSCREEN_BYTES = (WIDTH * HEIGHT) / 8;
+static const uint16_t HEIGHT = 250;
+static const uint32_t ALLSCREEN_BYTES = (WIDTH * HEIGHT) / 8;  // 128 * 250 / 8 = 4000 bytes
 
 void SSD1680EPaper::setup() {
   ESP_LOGI(TAG, "=== SSD1680 SETUP V4 - WITH POWER PIN ===");
@@ -124,12 +125,10 @@ void SSD1680EPaper::send_data_(const uint8_t *data, size_t len) {
 void SSD1680EPaper::init_display_() {
   ESP_LOGI(TAG, ">>> INIT DISPLAY START <<<");
   
-  // Log both pins before we do anything
   if (this->busy_pin_ != nullptr) {
     ESP_LOGI(TAG, "BUSY (GPIO48) before reset: %d", this->busy_pin_->digital_read());
   }
   if (this->reset_pin_ != nullptr) {
-    // Temporarily set reset pin as input to read its state
     ESP_LOGI(TAG, "RESET pin is configured as output, current drive: HIGH");
   }
   
@@ -160,7 +159,6 @@ void SSD1680EPaper::init_display_() {
     }
   }
   
-  // Wait a bit after reset
   delay(100);
   
   if (this->busy_pin_ != nullptr) {
@@ -176,7 +174,6 @@ void SSD1680EPaper::init_display_() {
     ESP_LOGI(TAG, "BUSY after SW reset: %d", this->busy_pin_->digital_read());
   }
   
-  // Wait for SW reset - short timeout for debugging
   uint32_t start = millis();
   while (this->busy_pin_ != nullptr && this->busy_pin_->digital_read()) {
     if (millis() - start > 2000) {
@@ -187,31 +184,31 @@ void SSD1680EPaper::init_display_() {
     App.feed_wdt();
   }
   
-  // Driver output control
+  // Driver output control (HEIGHT = 250 -> 249 = 0x00F9)
   ESP_LOGD(TAG, "Setting driver output (0x01)");
   this->command_(0x01);
-  this->data_(0x27);
-  this->data_(0x01);
-  this->data_(0x00);
+  this->data_(0xF9);  // HEIGHT - 1 low byte (249)
+  this->data_(0x00);  // high byte
+  this->data_(0x00);  // GD=0, SM=0, TB=0
   
   // Data entry mode
   ESP_LOGD(TAG, "Setting data entry mode (0x11)");
   this->command_(0x11);
-  this->data_(0x03);
+  this->data_(0x03);  // X inc, Y inc
   
-  // RAM X address
+  // RAM X address (0..15 -> 16 bytes = 128 px)
   ESP_LOGD(TAG, "Setting RAM X (0x44)");
   this->command_(0x44);
   this->data_(0x00);
   this->data_(0x0F);
   
-  // RAM Y address  
+  // RAM Y address (0..249)
   ESP_LOGD(TAG, "Setting RAM Y (0x45)");
   this->command_(0x45);
-  this->data_(0x00);
-  this->data_(0x00);
-  this->data_(0x27);
-  this->data_(0x01);
+  this->data_(0x00);  // Y start low
+  this->data_(0x00);  // Y start high
+  this->data_(0xF9);  // Y end low (249)
+  this->data_(0x00);  // Y end high
   
   // Border waveform
   ESP_LOGD(TAG, "Setting border (0x3C)");
@@ -240,19 +237,13 @@ void SSD1680EPaper::init_display_() {
 void SSD1680EPaper::full_update_() {
   ESP_LOGD(TAG, "Full refresh with 0xF7");
   
-  // 0xF7 = Enable clock, Load temperature, Load LUT, Display, Disable Analog, Disable OSC
-  // This is the full sequence that actually refreshes the e-paper panel
   this->command_(0x22);
   this->data_(0xF7);
   this->command_(0x20);
   
-  // Wait for refresh to complete
-  // Note: BUSY pin may not go LOW on this display, but refresh still works
-  // Typical full refresh takes 2-4 seconds
   uint32_t start = millis();
   while (this->busy_pin_ != nullptr && this->busy_pin_->digital_read()) {
-    if (millis() - start > 5000) {  // 5 second timeout
-      // This is normal - BUSY doesn't always go LOW on this display
+    if (millis() - start > 5000) {
       ESP_LOGD(TAG, "Update timeout (normal for this display) - took %lu ms", millis() - start);
       break;
     }
@@ -268,7 +259,6 @@ void SSD1680EPaper::full_update_() {
 void SSD1680EPaper::display_frame_() {
   ESP_LOGD(TAG, "Writing frame to display");
   
-  // Hardware reset to recover from any stuck state
   if (this->reset_pin_ != nullptr) {
     this->reset_pin_->digital_write(false);
     delay(10);
@@ -276,35 +266,33 @@ void SSD1680EPaper::display_frame_() {
     delay(10);
   }
   
-  // Wait for display to be ready after reset
   this->wait_until_idle_();
   
-  // Re-send minimal init commands
   this->command_(0x12);  // SW reset
   delay(10);
   this->wait_until_idle_();
   
-  // Driver output control
+  // Driver output control (HEIGHT = 250 -> 249 = 0x00F9)
   this->command_(0x01);
-  this->data_(0x27);  // 296 - 1 = 0x127, low byte
-  this->data_(0x01);  // high byte
+  this->data_(0xF9);  // low byte (249)
+  this->data_(0x00);  // high byte
   this->data_(0x00);  // GD=0, SM=0, TB=0
   
   // Data entry mode
   this->command_(0x11);
   this->data_(0x03);  // X inc, Y inc
   
-  // Set RAM X address
+  // Set RAM X address (0..15 -> 16 bytes = 128 px)
   this->command_(0x44);
   this->data_(0x00);
-  this->data_(0x0F);  // 16 bytes = 128 pixels
+  this->data_(0x0F);
   
-  // Set RAM Y address  
+  // Set RAM Y address (0..249)
   this->command_(0x45);
-  this->data_(0x00);
-  this->data_(0x00);
-  this->data_(0x27);
-  this->data_(0x01);
+  this->data_(0x00);  // Y start low
+  this->data_(0x00);  // Y start high
+  this->data_(0xF9);  // Y end low (249)
+  this->data_(0x00);  // Y end high
   
   // Set RAM address counters
   this->command_(0x4E);
@@ -314,9 +302,6 @@ void SSD1680EPaper::display_frame_() {
   this->data_(0x00);
   
   // Write B/W RAM (0x24) - INVERT data for correct polarity
-  // This display: 0xFF = black, 0x00 = white (confirmed by testing)
-  // ESPHome buffer: bits set = foreground (COLOR_ON), cleared = background
-  // We need to invert so drawing shows up correctly
   this->command_(0x24);
   for (uint32_t i = 0; i < ALLSCREEN_BYTES; i++) {
     this->data_(~this->buffer_[i]);  // INVERTED for correct polarity
@@ -351,12 +336,10 @@ void SSD1680EPaper::update() {
     ESP_LOGI(TAG, "Configured pins: CS=45, DC=46, RST=47, BUSY=48");
     ESP_LOGI(TAG, "SPI: CLK=12, MOSI=11");
     
-    // Test: Try reading GPIO47 as input to see if BUSY/RESET are swapped
     ESP_LOGI(TAG, "");
     ESP_LOGI(TAG, "=== PIN SWAP TEST ===");
     ESP_LOGI(TAG, "Reading GPIO48 (configured as BUSY): %d", this->busy_pin_->digital_read());
     
-    // Temporarily configure GPIO47 as input to read it
     gpio_config_t io_conf = {};
     io_conf.pin_bit_mask = (1ULL << 47);
     io_conf.mode = GPIO_MODE_INPUT;
@@ -365,10 +348,9 @@ void SSD1680EPaper::update() {
     gpio_config(&io_conf);
     ESP_LOGI(TAG, "Reading GPIO47 (configured as RESET, now input): %d", gpio_get_level(GPIO_NUM_47));
     
-    // Restore GPIO47 as output for reset
     io_conf.mode = GPIO_MODE_OUTPUT;
     gpio_config(&io_conf);
-    gpio_set_level(GPIO_NUM_47, 1);  // Keep high (not in reset)
+    gpio_set_level(GPIO_NUM_47, 1);
     ESP_LOGI(TAG, "=== END PIN SWAP TEST ===");
     ESP_LOGI(TAG, "");
     
