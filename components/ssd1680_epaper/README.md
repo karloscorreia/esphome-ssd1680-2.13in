@@ -41,7 +41,7 @@ Add this to your ESPHome YAML configuration:
 external_components:
   - source:
       type: git
-      url: https://github.com/apadua/esphome-ssd1680
+      url: [https://github.com/karloscorreia/esphome-ssd1680-2.13in](https://github.com/karloscorreia/esphome-ssd1680-2.13in)
       ref: main
     refresh: 0s          # ensures ESPHome always pulls the latest commit instead of using a stale cache
     components: [ssd1680_epaper]
@@ -117,7 +117,7 @@ wifi:
 external_components:
   - source:
       type: git
-      url: https://github.com/apadua/esphome-ssd1680
+      url: [https://github.com/apadua/esphome-ssd1680](https://github.com/karloscorreia/esphome-ssd1680-2.13in)
       ref: main
     refresh: 0s
     components: [ssd1680_epaper]
