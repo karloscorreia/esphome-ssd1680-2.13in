@@ -25,7 +25,11 @@ class SSD1680EPaper : public display::DisplayBuffer,
 
  protected:
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
-  int get_height_internal() override { return 296; }
+
+  // CrowPanel 2.13" (GDEM0213B74 / SSD1680)
+  // RAM física: 128 x 250 (confirmado pela referência oficial GxEPD2_213_B74)
+  // Área visível: 122 x 250 (6 colunas de RAM ficam fora da área visível)
+  int get_height_internal() override { return 250; }
   int get_width_internal() override { return 128; }
 
   void init_display_();
