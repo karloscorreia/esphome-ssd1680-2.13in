@@ -53,7 +53,7 @@ void SSD1680EPaper::setup() {
 }
 
 void SSD1680EPaper::dump_config() {
-  LOG_DISPLAY("", "SSD1680 E-Paper", this);
+  LOG_DISPLAY("", "SSD1680 E-Paper K", this);
   LOG_PIN("  DC Pin: ", this->dc_pin_);
   LOG_PIN("  Reset Pin: ", this->reset_pin_);
   LOG_PIN("  Busy Pin: ", this->busy_pin_);
